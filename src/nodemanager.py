@@ -16,9 +16,7 @@ import signal
 
 
 # basic configuration
-logging.basicConfig(filename='node-manager.log', level=logging.INFO)
-
-NOT_SUPPORTED = "Not supported yet, contact michal.kubik.pl@gmail.com if you need it ;)"
+NOT_SUPPORTED = "Not supported yet, if you need it fill in Issue on https://github.com/mkubik8080/selenium-grid-node-manager ;)"
 
 # exit codes
 SUCCESS = True
@@ -39,10 +37,14 @@ class NodeManager(SimpleXMLRPCServer):
         print "Caught signal", signum
         self.shutdown()
 
-    def start(self):
+    def start(self, cwd=None):
         self.finished = False
         try:
-            logging.info(' %s\n\tNode Manager started' % strftime('%d %b %Y %H:%M:%S', localtime()))
+            logging.info('Node Manager started at %s' % strftime('%d %b %Y %H:%M:%S', localtime()))
+            # update working dir if needed
+            if cwd:
+                os.chdir(cwd)
+
             # register breaking signals
             # s.register_signal(signal.SIGTERM)
             # s.register_signal(signal.SIGINT)
@@ -68,7 +70,6 @@ class NodeManager(SimpleXMLRPCServer):
 
 class NodeManagerFunctionsBase:
     def status(self):
-        print("status")
         return SUCCESS
 
     def list_dir(self, dir_name):
@@ -103,7 +104,11 @@ class NodeManagerFunctionsWin(NodeManagerFunctionsBase):
         # return SUCCESS
 
 
-def getNodeManager(host, port, logRequests=False):
+def getNodeManager(host, port, logRequests=False, loggerFile=None, loggerLevel=logging.INFO):
+    FILE_NAME = loggerFile or os.path.join(os.path.dirname(os.path.realpath(__file__)), 'node-manager.log')
+    FORMAT = '%(asctime)-15s %(message)s'
+    logging.basicConfig(filename=FILE_NAME, level=loggerLevel, format=FORMAT)
+
     try:
         s = NodeManager((host, port), logRequests=logRequests)
     except Exception, err:

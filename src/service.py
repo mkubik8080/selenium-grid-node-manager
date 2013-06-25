@@ -9,7 +9,6 @@ import win32event
 import win32api
 import sys
 import win32serviceutil
-import servicemanager
 
 class Service(win32serviceutil.ServiceFramework):
     _svc_name_ = '_unNamed'
@@ -17,35 +16,36 @@ class Service(win32serviceutil.ServiceFramework):
 
     def __init__(self, *args):
         win32serviceutil.ServiceFramework.__init__(self, *args)
-        self.log('init')
+        self.log('Service initialization...')
+        # Create an event which we will use to wait on.
+        # The "service stop" request will set this event.
         self.stop_event = win32event.CreateEvent(None, 0, 0, None)
 
-    def log(self, msg):
-        servicemanager.LogInfoMsg(str(msg))
-
-    def sleep(self, sec):
-        win32api.Sleep(sec * 1000, True)
+    def SvcStop(self):
+        # Before we do anything, tell the SCM we are starting the stop process.
+        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        # perform stop
+        self.stop()
+        # And set stop event.
+        win32event.SetEvent(self.stop_event)
+        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
     def SvcDoRun(self):
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
         try:
             self.ReportServiceStatus(win32service.SERVICE_RUNNING)
-            self.log('start')
             self.start()
-            self.log('wait')
             win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
-            self.log('done')
         except Exception, x:
             self.log('Exception : %s' % x)
             self.SvcStop()
 
-    def SvcStop(self):
-        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-        self.log('stopping')
-        self.stop()
-        self.log('stopped')
-        win32event.SetEvent(self.stop_event)
-        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+    def log(self, msg):
+        import servicemanager
+        servicemanager.LogInfoMsg(str(msg))
+
+    def sleep(self, sec):
+        win32api.Sleep(sec * 1000, True)
 
     # to be overridden
     def start(self):
@@ -166,3 +166,6 @@ def uninstall(cls, name):
 
     except Exception, x:
         sys.stderr.write(x.strerror + "\n")
+
+if __name__=='__main__':
+    win32serviceutil.HandleCommandLine(Service)

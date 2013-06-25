@@ -6,35 +6,40 @@ Short description
 XML-RPC based tool to allow remote management of selenium grid machines.
 
 ----
-#### Note: *it's initial repo*
+##### Note: *it's initial repo*
  - code is still work in progress
 
 
 Installation:
 ------
 
-Just clone repo to any folder and start manager as service or directly:
-- run manager as a Windows service or Unix daemon
-  ```bash
-  $ python node-manager.py -h
-  ```
-
-- execute manager directly
-  ```bash
-  $ python src/nodemanager.py -h
-  ```
+Just clone repo to any folder and start manager as service or directly:  
+  - run manager as a Windows service or Unix daemon  
+    ```bash
+    $ python node-manager.py -h
+    ```
+  - execute manager directly  
+    ```bash
+    $ python src/nodemanager.py -h
+    ```
 
 Usage:
 ------
 Example usages are:
-#####Python:
-```python
-import xmlrpclib
+###### Python:  
+  ```python
+  import xmlrpclib
 
-s = xmlrpclib.ServerProxy('http://localhost:5005')
-s.system.listMethods()
-```
+  s = xmlrpclib.ServerProxy('http://localhost:5005')
+  s.system.listMethods()
+  ```
+
+Available methods:
+------------------
+  - method()  - opis metody
+  - method()  - opis metody
 
 Dependencies:
 -------------
+  - [python](http://www.python.org/) - preferably version 2.7, older version may require to install some packages
   - running as windows service requires _python win extensions_ [__pywin32__ (win32all)](http://sourceforge.net/projects/pywin32/files/)
