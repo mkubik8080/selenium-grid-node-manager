@@ -111,7 +111,9 @@ class NodeManagerFunctionsBase:
             file.write(arg.data)
 
         chunked_files[path] += len(arg.data)
-        logging.info("Wrote file chunk of size " + sizeof_fmt(len(arg.data)))
+        logging.info("Wrote file chunk: {}/{}".format(
+            sizeof_fmt(len(arg.data)), sizeof_fmt(chunked_files.get(path))
+        )
 
         return SUCCESS, chunked_files.get(path)
 
