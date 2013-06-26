@@ -92,9 +92,10 @@ class NodeManagerFunctionsBase:
             return FAILURE, wrong_path
         if os.path.isfile(path):
             return FAILURE, file_exists
-        with open(path, 'w+b') as file:
+        with open(path, 'wb') as file:
             file.write(arg.data)
-            return SUCCESS, md5_for_file(file)
+
+        return SUCCESS, md5_for_file(path)
 
 
 class NodeManagerFunctionsUnix(NodeManagerFunctionsBase):
@@ -160,14 +161,15 @@ def _getCommandExecutionResponse(command):
     return output
 
 
-def md5_for_file(f, block_size=2 ** 20):
-    md5 = hashlib.md5()
-    while True:
-        data = f.read(block_size)
-        if not data:
-            break
-        md5.update(data)
-    return md5.hexdigest()
+def md5_for_file(fileName, block_size=2 ** 20):
+    with open(fileName, 'rb') as f:
+        md5 = hashlib.md5()
+        while True:
+            data = f.read(block_size)
+            if not data:
+                break
+            md5.update(data)
+        return md5.hexdigest()
 
 
 if __name__ == '__main__':
