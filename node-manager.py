@@ -11,8 +11,8 @@ SERVICE_DESCRIPTION = "Selenium Node Manager - Sabre QA"
 
 
 class NodeManagerService(service.Service):
-    logFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), SERVICE_NAME + '.log')
-    nodeManager = getNodeManager('', 5005, logRequests=True, loggerFile=logFile)
+    logFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'manager.log')
+    nodeManager = getNodeManager('', 5005, logRequests=True, loggerFile=logFile, loggerLevel=10)
 
     _svc_name_ = SERVICE_NAME
     _svc_description_ = SERVICE_DESCRIPTION

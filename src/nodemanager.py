@@ -5,6 +5,7 @@
 '''
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+import hashlib
 from optparse import OptionParser
 import shlex
 from time import localtime, strftime
@@ -70,43 +71,56 @@ class NodeManager(SimpleXMLRPCServer):
 
 class NodeManagerFunctionsBase:
     def status(self):
-        return SUCCESS
+        logging.debug("status()")
+        return SUCCESS, ""
 
     def list_dir(self, dir_name):
         """List directory provided as argument
             @param dir_name: directory to list
         """
         logging.debug('list_dir(%s)', dir_name)
-        return os.listdir(dir_name), SUCCESS
+        return SUCCESS, os.listdir(dir_name)
 
     def cwd(self):
-        return os.getcwd(), SUCCESS
+        logging.debug("cwd()")
+        return SUCCESS, os.getcwd()
+
+    def writeFile(self, arg, path):
+        wrong_path = "Saving outside working directory not allowed, use relative path wisely or proper absolute path"
+        file_exists = "File exists in filesystem, cannot overwrite"
+        if not os.getcwd() in os.path.abspath(path):
+            return FAILURE, wrong_path
+        if os.path.isfile(path):
+            return FAILURE, file_exists
+        with open(path, 'w+b') as file:
+            file.write(arg.data)
+            return SUCCESS, md5_for_file(file)
 
 
 class NodeManagerFunctionsUnix(NodeManagerFunctionsBase):
     def killChromedrivers(self):
-        return NOT_SUPPORTED
+        return FAILURE, NOT_SUPPORTED
 
     def killChromedrivers(self):
-        return NOT_SUPPORTED
+        return FAILURE, NOT_SUPPORTED
 
 
 class NodeManagerFunctionsWin(NodeManagerFunctionsBase):
     def killChromedrivers(self):
         logging.info("Executing killChromedrivers request")
         # _executeCommand("taskkill /F /IM chromedriver.exe", silently=True)
-        return _getCommandExecutionResponse("taskkill /F /IM chromedriver.exe"), SUCCESS
+        return SUCCESS, _getCommandExecutionResponse("taskkill /F /IM chromedriver.exe")
         # return SUCCESS
 
     def killChromes(self):
         logging.info("Executing killChromes request")
-        return _getCommandExecutionResponse("taskkill /F /IM chrome.exe"), SUCCESS
+        return SUCCESS, _getCommandExecutionResponse("taskkill /F /IM chrome.exe")
         # return SUCCESS
 
 
 def getNodeManager(host, port, logRequests=False, loggerFile=None, loggerLevel=logging.INFO):
     FILE_NAME = loggerFile or os.path.join(os.path.dirname(os.path.realpath(__file__)), 'node-manager.log')
-    FORMAT = '%(asctime)-15s %(message)s'
+    FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
     logging.basicConfig(filename=FILE_NAME, level=loggerLevel, format=FORMAT)
 
     try:
@@ -146,6 +160,16 @@ def _getCommandExecutionResponse(command):
     return output
 
 
+def md5_for_file(f, block_size=2 ** 20):
+    md5 = hashlib.md5()
+    while True:
+        data = f.read(block_size)
+        if not data:
+            break
+        md5.update(data)
+    return md5.hexdigest()
+
+
 if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-P", "--port", dest="port", default=5005, type="int",
@@ -153,6 +177,6 @@ if __name__ == '__main__':
     parser.add_option("-l", "--log-requests", action="store_true", dest="logRequests", default=False,
                       help="enables logging requests [default: False]")
     (options, args) = parser.parse_args()
-    s = getNodeManager('', options.port, options.logRequests)
+    s = getNodeManager('', options.port, options.logRequests, loggerLevel=logging.DEBUG)
 
     s.start()
