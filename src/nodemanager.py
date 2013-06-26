@@ -23,6 +23,8 @@ NOT_SUPPORTED = "Not supported yet, if you need it fill in Issue on https://gith
 SUCCESS = True
 FAILURE = False
 
+chunked_files = {}
+
 
 class NodeManager(SimpleXMLRPCServer):
     """
@@ -86,14 +88,40 @@ class NodeManagerFunctionsBase:
         return SUCCESS, os.getcwd()
 
     def writeFile(self, arg, path):
-        wrong_path = "Saving outside working directory not allowed, use relative path wisely or proper absolute path"
-        file_exists = "File exists in filesystem, cannot overwrite"
-        if not os.getcwd() in os.path.abspath(path):
-            return FAILURE, wrong_path
-        if os.path.isfile(path):
-            return FAILURE, file_exists
+        check = is_path_allowed(path)
+        if not check.get("status"):
+            return FAILURE, check.get("errorMsg")
+
         with open(path, 'wb') as file:
             file.write(arg.data)
+
+        logging.info("Wrote file " + get_path_and_size_of(path)
+        )
+
+        return SUCCESS, md5_for_file(path)
+
+    def writeFileChunk(self, arg, path):
+        if not chunked_files.has_key(path):
+            check = is_path_allowed(path)
+            if not check.get("status"):
+                return FAILURE, check.get("errorMsg")
+            chunked_files[path] = 0
+
+        with open(path, 'ab') as file:
+            file.write(arg.data)
+
+        chunked_files[path] += len(arg.data)
+        logging.info("Wrote file chunk of size " + sizeof_fmt(len(arg.data)))
+
+        return SUCCESS, chunked_files.get(path)
+
+    def finalizeChunkedFile(self, path):
+        if not chunked_files.has_key(path):
+            return FAILURE, "There is no unfinished file like: " + path
+        else:
+            logging.info(
+                "Finished writing file " + get_path_and_size_of(path))
+            chunked_files.pop(path)
 
         return SUCCESS, md5_for_file(path)
 
@@ -110,12 +138,12 @@ class NodeManagerFunctionsWin(NodeManagerFunctionsBase):
     def killChromedrivers(self):
         logging.info("Executing killChromedrivers request")
         # _executeCommand("taskkill /F /IM chromedriver.exe", silently=True)
-        return SUCCESS, _getCommandExecutionResponse("taskkill /F /IM chromedriver.exe")
+        return SUCCESS, getCommandExecutionResponse("taskkill /F /IM chromedriver.exe")
         # return SUCCESS
 
     def killChromes(self):
         logging.info("Executing killChromes request")
-        return SUCCESS, _getCommandExecutionResponse("taskkill /F /IM chrome.exe")
+        return SUCCESS, getCommandExecutionResponse("taskkill /F /IM chrome.exe")
         # return SUCCESS
 
 
@@ -142,17 +170,17 @@ def getNodeManager(host, port, logRequests=False, loggerFile=None, loggerLevel=l
     return s
 
 
-def _executeCommandInShell(command, silently=False):
+def executeCommandInShell(command, silently=False):
     devnull = open(os.devnull, 'w') if silently else None
     return subprocess.call(shlex.split(command), shell=True, stdout=devnull, stderr=devnull)
 
 
-def _executeCommand(command, silently=False):
+def executeCommand(command, silently=False):
     devnull = open(os.devnull, 'w') if silently else None
     return subprocess.call(shlex.split(command), shell=False, stdout=devnull, stderr=devnull)
 
 
-def _getCommandExecutionResponse(command):
+def getCommandExecutionResponse(command):
     try:
         output = subprocess.check_output(shlex.split(command), shell=False, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError, e:
@@ -170,6 +198,30 @@ def md5_for_file(fileName, block_size=2 ** 20):
                 break
             md5.update(data)
         return md5.hexdigest()
+
+
+def sizeof_fmt(num):
+    for x in ['bytes', 'KB', 'MB', 'GB']:
+        if num < 1024.0 and num > -1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'TB')
+
+
+def is_path_allowed(path):
+    wrong_path = "Saving outside working directory not allowed, use relative path wisely or proper absolute path"
+    file_exists = "File exists in filesystem, cannot overwrite"
+    if not os.getcwd() in os.path.abspath(path):
+        logging.warn("Tried to save outside working directory: " + path)
+        return {"status": FAILURE, "errorMsg": wrong_path}
+    if os.path.isfile(path):
+        logging.warn("Tried to overwrite existing file: " + path)
+        return {"status": FAILURE, "errorMsg": file_exists}
+    return {"status": SUCCESS, "errorMsg": None}
+
+
+def get_path_and_size_of(path):
+    return os.path.abspath(path) + " (" + sizeof_fmt(os.path.getsize(path)) + ")"
 
 
 if __name__ == '__main__':
