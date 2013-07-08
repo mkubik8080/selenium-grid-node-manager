@@ -1,5 +1,7 @@
+import os
+import sys
 import argparse
-import os, sys
+
 from src import service
 from src.nodemanager import getNodeManager
 from src.daemon import Daemon
@@ -51,8 +53,8 @@ def parseOptions():
 
     sp_stop = sp.add_parser('stop', help='Stops %(prog)s daemon/service')
     sp_stop.set_defaults(func=stop)
-    sp_stop = sp.add_parser('uninstall', help='Stops and removes %(prog)s daemon/service')
-    sp_stop.set_defaults(func=uninstall)
+    sp_uninstall = sp.add_parser('uninstall', help='Stops and removes %(prog)s daemon/service')
+    sp_uninstall.set_defaults(func=uninstall)
     sp_restart = sp.add_parser('restart', help='Restarts %(prog)s daemon/service')
     sp_restart.set_defaults(func=restart)
 

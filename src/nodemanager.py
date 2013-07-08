@@ -4,16 +4,17 @@
 @author: Michal Kubik @ SVT QA 2013
 '''
 
-from SimpleXMLRPCServer import SimpleXMLRPCServer
-import hashlib
-from optparse import OptionParser
-import shlex
-from time import localtime, strftime
-import subprocess
 import os
 import sys
 import logging
 import signal
+import shlex
+import hashlib
+import subprocess
+
+from optparse import OptionParser
+from time import localtime, strftime
+from SimpleXMLRPCServer import SimpleXMLRPCServer
 
 
 # basic configuration
@@ -95,13 +96,12 @@ class NodeManagerFunctionsBase:
         with open(path, 'wb') as file:
             file.write(arg.data)
 
-        logging.info("Wrote file " + get_path_and_size_of(path)
-        )
+        logging.info("Wrote file " + get_path_and_size_of(path))
 
         return SUCCESS, md5_for_file(path)
 
     def writeFileChunk(self, arg, path):
-        if not chunked_files.has_key(path):
+        if not path in chunked_files:
             check = is_path_allowed(path)
             if not check.get("status"):
                 return FAILURE, check.get("errorMsg")
@@ -112,7 +112,7 @@ class NodeManagerFunctionsBase:
 
         chunked_files[path] += len(arg.data)
         logging.info("Wrote file chunk: {}/{}".format(
-            sizeof_fmt(len(arg.data)), sizeof_fmt(chunked_files.get(path))
+            sizeof_fmt(len(arg.data)), sizeof_fmt(chunked_files.get(path)))
         )
 
         return SUCCESS, chunked_files.get(path)
@@ -129,23 +129,23 @@ class NodeManagerFunctionsBase:
 
 
 class NodeManagerFunctionsUnix(NodeManagerFunctionsBase):
-    def killChromedrivers(self):
+    def killChromes(self):
         return FAILURE, NOT_SUPPORTED
 
-    def killChromedrivers(self):
+    def killChromeDrivers(self):
         return FAILURE, NOT_SUPPORTED
 
 
 class NodeManagerFunctionsWin(NodeManagerFunctionsBase):
-    def killChromedrivers(self):
-        logging.info("Executing killChromedrivers request")
-        # _executeCommand("taskkill /F /IM chromedriver.exe", silently=True)
-        return SUCCESS, getCommandExecutionResponse("taskkill /F /IM chromedriver.exe")
-        # return SUCCESS
-
     def killChromes(self):
         logging.info("Executing killChromes request")
         return SUCCESS, getCommandExecutionResponse("taskkill /F /IM chrome.exe")
+        # return SUCCESS
+
+    def killChromeDrivers(self):
+        logging.info("Executing killChromedrivers request")
+        # _executeCommand("taskkill /F /IM chromedriver.exe", silently=True)
+        return SUCCESS, getCommandExecutionResponse("taskkill /F /IM chromedriver.exe")
         # return SUCCESS
 
 
