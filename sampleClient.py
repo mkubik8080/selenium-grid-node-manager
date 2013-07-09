@@ -41,18 +41,18 @@ def initializeClients():
             print ' {0} is dead'.format(node)
 
 
-def status():
+def status(args):
     # it is just a dummy method for argparse
     # status is displayed during nodes initialization process
     pass
 
 
-def killChromes():
+def killChromes(args):
     for client in clients:
         print client.killChromes()[1]
 
 
-def killChromeDrivers():
+def killChromeDrivers(args):
     for client in clients:
         print client.killChromeDrivers()[1]
 
