@@ -32,12 +32,19 @@ def initializeClients():
     t = TimeoutTransport(timeout=1)
     for node in nodes:
         client = xmlrpclib.ServerProxy('http://{0}:5005'.format(node), transport=t)
+
         try:
             if client.status()[0]:
                 print ' {0} is alive'.format(node)
             clients.append(client)
         except Exception:
             print ' {0} is dead'.format(node)
+
+
+def status():
+    # it is just a dummy method for argparse
+    # status is displayed during nodes initialization process
+    pass
 
 
 def killChromes():
@@ -113,6 +120,9 @@ def write_file_in_chunks(s, file, dest):
 def parseOptions():
     parser = argparse.ArgumentParser(description='selenium-node-manager example client runner')
     sp = parser.add_subparsers()
+
+    sp_status = sp.add_parser('status', help='display statuses of defined endpoints')
+    sp_status.set_defaults(func=status)
 
     sp_killChromes = sp.add_parser('killChromes',
                                    help='kills any chrome processes that could be running on defined endpoints')
