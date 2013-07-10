@@ -77,6 +77,9 @@ class NodeManagerFunctionsBase:
         logging.debug("status()")
         return SUCCESS, ""
 
+    def dummy(self):
+        return SUCCESS, "dummy response"
+
     def list_dir(self, dir_name):
         """List directory provided as argument
             @param dir_name: directory to list
@@ -126,6 +129,11 @@ class NodeManagerFunctionsBase:
             chunked_files.pop(path)
 
         return SUCCESS, md5_for_file(path)
+
+    def selfUpdate(self):
+        logging.info("self update proccess started...")
+        getCommandExecutionResponse("pullFromGitHub.bat")
+        return SUCCESS, getCommandExecutionResponse("reInstallNodeManager.bat")
 
 
 class NodeManagerFunctionsUnix(NodeManagerFunctionsBase):
