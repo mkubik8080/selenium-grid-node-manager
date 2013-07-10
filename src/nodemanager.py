@@ -78,7 +78,7 @@ class NodeManagerFunctionsBase:
         return SUCCESS, ""
 
     def dummy(self):
-        return SUCCESS, "dummy response"
+        return SUCCESS, "dummy response new"
 
     def list_dir(self, dir_name):
         """List directory provided as argument
