@@ -29,7 +29,7 @@ class TimeoutTransport(xmlrpclib.Transport):
 
 
 def initializeClients():
-    t = TimeoutTransport(timeout=1)
+    t = TimeoutTransport(timeout=5)
     for node in nodes:
         client = xmlrpclib.ServerProxy('http://{0}:5005'.format(node), transport=t)
 
